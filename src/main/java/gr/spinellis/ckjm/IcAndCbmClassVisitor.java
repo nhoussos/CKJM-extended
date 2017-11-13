@@ -62,35 +62,40 @@ public class IcAndCbmClassVisitor extends AbstractClassVisitor {
     protected void visitJavaClass_body(JavaClass jc) {
         mCase1 = mCase2 = mCase3 = 0;
         mCurrentClass = jc;
-        mParents = jc.getSuperClasses();
-        mParentsMethods = new ArrayList<Method[]>();
-        mMethods = jc.getMethods();
-        mInvokationsFromParents = new TreeSet<MethodInvokation>();
-        mInvoktionsFromCurrentClass = new TreeSet<MethodInvokation>();
-        mParentsReaders = new TreeSet<FieldAccess>();
-        mCurrentClassSetters = new TreeSet<FieldAccess>();
-        mMethodCouplings = new TreeSet<MethodCoupling>();
 
-        for (JavaClass j : mParents) {
-            mParentPool = new ConstantPoolGen(j.getConstantPool());
-            mParent = j;
-            mParentsMethods.add(j.getMethods());
-            for (Method m : j.getMethods()) {
-                m.accept(this);
+        try {
+            mParents = jc.getSuperClasses();
+            mParentsMethods = new ArrayList<Method[]>();
+            mMethods = jc.getMethods();
+            mInvokationsFromParents = new TreeSet<MethodInvokation>();
+            mInvoktionsFromCurrentClass = new TreeSet<MethodInvokation>();
+            mParentsReaders = new TreeSet<FieldAccess>();
+            mCurrentClassSetters = new TreeSet<FieldAccess>();
+            mMethodCouplings = new TreeSet<MethodCoupling>();
+
+            for (JavaClass j : mParents) {
+                mParentPool = new ConstantPoolGen(j.getConstantPool());
+                mParent = j;
+                mParentsMethods.add(j.getMethods());
+                for (Method m : j.getMethods()) {
+                    m.accept(this);
+                }
             }
-        }
 
-        for (Method m : mMethods) {
-            if (hasBeenDefinedInParentToo(m)) {
-                investigateMethod(m);
+            for (Method m : mMethods) {
+                if (hasBeenDefinedInParentToo(m)) {
+                    investigateMethod(m);
+                }
+                investigateMethodAndLookForSetters(m);
             }
-            investigateMethodAndLookForSetters(m);
-        }
 
-        countCase1();
-        countCase2(); //TODO: remove duplications
-        countCase3();
-        saveResults();
+            countCase1();
+            countCase2(); //TODO: remove duplications
+            countCase3();
+            saveResults();
+        } catch (ClassNotFoundException cnfe) {
+            cnfe.printStackTrace();
+        }
     }
 
     /**
